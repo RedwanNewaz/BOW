@@ -1,18 +1,19 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "CMake",
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include/**",
-                "/usr/include"
+                "/usr/include/**",
+                "${workspaceFolder}/build/install/include/**"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/gcc",
+            "compileCommands": "${config:cmake.buildDirectory}/compile_commands.json",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compilerPath": "/usr/bin/g++-11",
+            "cppStandard": "c++17",
             "cStandard": "c17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "intelliSenseMode": "linux-gcc-x64"
         }
     ],
     "version": 4

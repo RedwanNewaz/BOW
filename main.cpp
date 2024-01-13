@@ -1,4 +1,4 @@
-#define GRID_SAMPLING
+// #define GRID_SAMPLING
 #include <iostream>
 #include <fstream>
 #include <memory>
