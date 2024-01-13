@@ -1,0 +1,10 @@
+{
+    "name": "bow",
+    "service": "bow",
+    "dockerComposeFile": "./docker-compose.yml",
+    "extensions":[
+        "ms-iot.vscode-ros"
+    ],
+    "workspaceFolder": "/home/airlab/BOW",
+    "shutdownAction": "stopCompose"
+}

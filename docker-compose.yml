@@ -1,0 +1,15 @@
+version: '2.3'
+services:
+  bow:
+    build: . 
+    container_name: bow
+    privileged: true
+    volumes:
+      - ".:/home/airlab/BOW"
+      - "$HOME/.Xauthority:/root/.Xauthority:rw"
+      - "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+    environment:
+      - "DISPLAY=$DISPLAY"
+      - "QT_X11_NO_MITSHM=1"
+    network_mode: host 
+    command: /bin/sh -c "while sleep 1000; do :; done"

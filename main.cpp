@@ -19,7 +19,7 @@ void visualize(RobotModelPtr robot, const OBS_LIST& obstacles)
 
     do {
         plt::cla();
-        plt::plot(obsViewX, obsViewY, "ko");
+        plt::plot(obsViewX, obsViewY, "ko"); 
         auto state = robot->getState();
         plt::plot(std::vector<double>{state[0]}, std::vector<double>{state[1]}, "ro");
 

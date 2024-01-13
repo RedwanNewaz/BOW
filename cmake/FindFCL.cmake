@@ -15,6 +15,13 @@ ExternalProject_Add(
         -DFCL_BUILD_TESTS=OFF
 )
 
+ExternalProject_Get_Property(libccd install_dir)
+include_directories(${install_dir}/include)
+
+# add_dependencies(fcl libccd)
+# target_link_libraries(fcl ${install_dir}/lib/libccd.so)
+
+
 link_directories(${CMAKE_BINARY_DIR}/install/lib)
 
 set(fcl_INCLUDE_DIRS
@@ -22,6 +29,9 @@ set(fcl_INCLUDE_DIRS
 )
 
 find_package(Eigen3 REQUIRED)
+
+
+
 set(fcl_LIBRARIES
     Eigen3::Eigen
     libccd.so
