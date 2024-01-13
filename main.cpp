@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <thread>
+#include <cassert>
 #include "include/bow_planner.h"
 #include "include/matplotlibcpp.h"
 
@@ -35,7 +36,10 @@ void visualize(RobotModelPtr robot, const OBS_LIST& obstacles)
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
+
+    assert(argc > 1 && "argument needed to write file in a csv");
+    
     std::cout << "Bo Planner" << std::endl;
 
     OBS_LIST obstacles{
@@ -55,14 +59,14 @@ int main() {
             {13.0, 13.0}
     };
 
-    std::string outfile = "/home/airlab/CLionProjects/BOW/result/path2.csv";
+    std::string outfile = argv[1];
     std::ofstream myfile;
     myfile.open (outfile);
     auto robot = std::make_shared<RobotModel>(obstacles);
     bow_planner bow(robot, &myfile);
 //    bow.run();
     auto plannerCore = std::thread(&bow_planner::run, std::ref(bow));
-    visualize(robot, obstacles);
+    // visualize(robot, obstacles);
     plannerCore.join();
     return 0;
 }
