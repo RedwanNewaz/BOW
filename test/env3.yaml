@@ -1,0 +1,42 @@
+max_speed: 1.0
+min_speed: 0.0
+max_yawrate: 0.6981
+max_accel: 0.2
+max_dyawrate: 2.0472
+
+dt: 0.1
+predict_time: 3.0 #1.85
+
+goal_radius: 0.3
+robot_radius: 0.345
+obstacle_length: 0.5
+v_reso: 0.01
+yawrate_reso: 0.001745329
+pref_speed_index: 7
+
+to_goal_cost_gain: 0.15
+to_obstacle_cost_gain: 1.0
+speed_cost_gain: 1.0
+
+name: "env3"
+start: [-9.0, -9.0, 1.57]
+goal: [9.0, 9.0]
+
+
+
+obstacles: [
+  [4.11, -0.92],
+  [2.96, -6.09],
+  [3.92, 4.29],
+  [-0.74, -1.94],
+  [-4.09, 0.82],
+  [4.91, 1.97],
+  [-2.18, 7.06],
+  [-5.19, 2.75],
+  [-0.94, 4.99],
+  [-0.62, 1.03],
+  [2.02, 0.8],
+  [-7.04, -0.95],
+  [5.3, -3.99],
+  [-7.16, -6.15]
+]
