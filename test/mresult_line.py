@@ -67,7 +67,9 @@ def readResults(filename):
     data = pd.read_csv(filename).to_numpy()
     return data
 
-def main(env='env1.yaml', results=['../build/1_result.csv', '../build/2_result.csv']):
+def main(env='env1.yaml', results=""):
+    results = list(map(str.strip, results.split(',')))
+    print(results)
 
     # Create a figure and plot the line on it
     fig1, ax = plt.subplots(figsize=(16,10))

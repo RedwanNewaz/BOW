@@ -9,7 +9,7 @@ predict_time: 2.0 #1.85
 
 goal_radius: 0.3
 robot_radius: 0.245
-obstacle_length: 0.2
+obstacle_length: 0.1
 v_reso: 0.01
 yawrate_reso: 0.001745329
 pref_speed_index: 7
@@ -20,9 +20,9 @@ to_obstacle_cost_gain: 1.0
 speed_cost_gain: 1.0
 
 name: "20_obstacles"
-start: [2.0, -1.0, 1.57]
-goal: [5.0, 5.0]
-
+start: [[2.0, -1.0, 1.57], [5.0, 5.0, 1.57]]
+goal: [[5.0, 5.0], [2.0, -1.0]]
+boundary: [-2.0, 6.0, -2.0, 11.0]
 
 obstacles: [
  [0.13, 0.31],
@@ -31,6 +31,7 @@ obstacles: [
 [0.74, 1.93],
 [2.77, -0.35],
 [3.60, 2.82],
+
 [1.34, -0.79],
 [4.23, 0.09],
 [2.89, 5.29],

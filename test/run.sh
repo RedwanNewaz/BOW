@@ -5,4 +5,4 @@ ENV_FILE=$1
 
 $EXE $(pwd)/$ENV_FILE
 python="/home/airlab/anaconda3/envs/limbo/bin/python"
-$python result_line.py --env=$ENV_FILE --result="result.csv"
+$python mresult_line.py --env=$ENV_FILE --results  "$(pwd)/1_result.csv, $(pwd)/2_result.csv"
