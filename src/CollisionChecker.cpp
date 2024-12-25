@@ -1,18 +1,10 @@
-//
-// Created by airlab on 12/25/24.
-//
 #include "CollisionChecker.h"
-
+#include <Eigen/Geometry>
 namespace mbow{
-    CollisionChecker::CollisionChecker(const ParamPtr &pm): _pm(pm) {
-        auto obsList = pm->get_ndarray<float>("obstacles");
-        float robotRadius = pm->get_param<float>("robot_radius");
-        float obsLen = pm->get_param<float>("obstacle_length");
-        for(auto& obs: obsList)
-        {
-            addToObstaclesSet(obs, robotRadius, obsLen);
-        }
+    CollisionChecker::CollisionChecker(const ParamPtr& pm): CollisionCheckerBase(pm) {
+        init();
     }
+
 
     CCPtr CollisionChecker::getSharedPtr()
     {
@@ -23,6 +15,8 @@ namespace mbow{
         for(int i = trajectory.size() - 1; i >= 0; i--)
         {
             auto point = trajectory[i];
+            if(!withinBoundary(point))
+                return true;
             int X = static_cast<int>(point[0] / _grid_step);
             int Y = static_cast<int>(point[1] / _grid_step);
             if(_obstacles_set.find({X, Y}) != _obstacles_set.end())
@@ -52,5 +46,12 @@ namespace mbow{
         }
     }
 
+    void CollisionChecker::initCollisionCheker(const std::vector<std::vector<float>> &obsList, float robotRadius,
+                                               float obsLen) {
+        for(auto& obs: obsList)
+        {
+            addToObstaclesSet(obs, robotRadius, 2 * obsLen);
+        }
 
+    }
 }

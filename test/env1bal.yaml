@@ -7,7 +7,7 @@ max_dyawrate: 2.0472
 dt: 0.1
 predict_time: 3.0 #1.85
 
-goal_radius: 0.5
+goal_radius: 0.3
 robot_radius: 0.345
 obstacle_length: 0.25
 v_reso: 0.01
@@ -19,9 +19,9 @@ to_obstacle_cost_gain: 1.0
 speed_cost_gain: 1.0
 
 name: "env1"
-start: [[-10.0, -10.0, 1.5707], [0.0, 0.0, -1.5707]]
-goal: [[0.0, 0.0], [-10.0, -10.0]]
-boundary: [-11.0, 6.0, -11.0, 11.0]
+start: [-10.0, -10.0, 1.5707]
+goal: [0.0, 0.0]
+
 
 obstacles: [
  [-10.,  -8.],

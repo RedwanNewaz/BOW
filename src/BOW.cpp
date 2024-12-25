@@ -10,9 +10,8 @@
 
 namespace mbow {
 
-    BOPlanner::BOPlanner(const State& x, const Point& goal, const CCPtr & cc, const ParamPtr & pm)
-            : goal_(goal)
-            , x_(x)
+    BOPlanner::BOPlanner(const std::vector<State>& x, const CCPtr & cc, const ParamPtr & pm)
+            : x_(x)
             , cc_(cc)
             , pm_(pm)
     {
@@ -25,32 +24,49 @@ namespace mbow {
         robot_radius_   = pm_->get_param<double>("robot_radius");
         predict_time_   = pm_->get_param<double>("predict_time");
         pref_speed_index_ = pm_->get_param<double>("pref_speed_index");
+        auto goal         = pm->get_ndarray<double>("goal");
+        goal_.reserve(goal.size());
+        for(auto& g: goal)
+        {
+            goal_.emplace_back(Point{g[0], g[1]});
+        }
     }
-
 
     Eigen::VectorXd BOPlanner::operator()(const Eigen::VectorXd& u) const {
         Eigen::VectorXd res(2);
 
         // limbo sample u in [0, 1] range which needs to map/scale to the robot's vel domains
-        Eigen::Vector2d uu = scaledU(u);
-        Control act{uu[0], uu[1]};
+        Eigen::VectorXd uu = scaledU(u);
+
 
         // feed forward trajectory for a sampled control for a given predict_time
-        Traj traj = calcTrajectory(x_, uu(0), uu(1),  goal_);
-        auto[index, goalDist] = calcToGoalCost(traj, goal_);
+        Traj traj1 = calcTrajectory(x_[0], uu(0), uu(1),  goal_[0]);
+        Traj traj2 = calcTrajectory(x_[1], uu(2), uu(3),  goal_[1]);
+        auto[index1, goalDist1] = calcToGoalCost(traj1, goal_[0]);
+        auto[index2, goalDist2] = calcToGoalCost(traj2, goal_[1]);
         // erase the part of trajectory that does not help to reach goal location
-        traj.erase(traj.begin() + index + 1, traj.end());
+        traj1.erase(traj1.begin() + index1 + 1, traj1.end());
+        traj2.erase(traj2.begin() + index2 + 1, traj2.end());
 
-        res(1) = 1.0 - static_cast<float>(cc_->isCollision(traj));
-        res(0) = (res(1) > 0.0) ? 1e3 * std::exp(-goalDist) : -1.0e3;
+        std::vector<Traj> trajs{traj1, traj2};
+        bool CA = cc_->isCollision(traj1);
+        bool CB = cc_->isCollision(traj2);
+        res(1) = 1.0 - static_cast<float>(CA || CB);
+        res(0) = (res(1) > 0.0) ? 1e3 * std::exp(-(goalDist1 + goalDist2)) : -1.0e3;
         return res;
     }
 
-    Eigen::Vector2d BOPlanner::scaledU(const Eigen::VectorXd& u) const {
-        Eigen::Vector2d uu;
+
+    Eigen::VectorXd BOPlanner::scaledU(const Eigen::VectorXd& u) const {
+        Eigen::VectorXd uu(4);
         uu(0) = min_speed_ + (max_speed_ - min_speed_) * u(0);
         // yaw angle is symmetric (there is no min_yaw rate)
         uu(1) = -max_yawrate_ + 2 * max_yawrate_ * u(1);
+
+        uu(2) = min_speed_ + (max_speed_ - min_speed_) * u(2);
+        // yaw angle is symmetric (there is no min_yaw rate)
+        uu(3) = -max_yawrate_ + 2 * max_yawrate_ * u(3);
+
         return uu;
     }
 
@@ -104,7 +120,7 @@ namespace mbow {
     }
 
 
-    Traj BOPlanner::computeControl(Control& u) {
+    Eigen::VectorXd BOPlanner::computeControl() {
         using namespace limbo;
         using Stop_t = boost::fusion::vector<stop::MaxIterations<Params>>;
         using Stat_t = boost::fusion::vector<
@@ -132,64 +148,75 @@ namespace mbow {
                 stopcrit<Stop_t>,
                 experimental::constraint_modelfun<Constrained_GP_t>
         > opt;
-        mbow::Traj traj;
+        Eigen::VectorXd v;
+//        opt.optimize(*this);
+//        auto uu = opt.best_sample();
+//        v = scaledU(uu);
+
+        bool isCollision = true;
+        int count = 500;
         do{
             opt.optimize(*this);
             auto uu = opt.best_sample();
-            auto v = scaledU(uu);
-            traj = calcTrajectory(x_, v(0), v(1),  goal_);
-        }while(cc_->isCollision(traj));
-        return traj;
+            v = scaledU(uu);
+            Traj traj1 = calcTrajectory(x_[0], uu(0), uu(1),  goal_[0]);
+            Traj traj2 = calcTrajectory(x_[1], uu(2), uu(3),  goal_[1]);
+            bool CA = cc_->isCollision(traj1);
+            bool CB = cc_->isCollision(traj2);
+            isCollision = CA || CB;
+        }while(isCollision && --count > 0);
+        return v;
     }
 
-    std::pair<bool, Traj> BOPlanner::solve(double time, bool verbose) {
+    std::pair<bool, std::vector<Traj>> BOPlanner::solve(double time, bool verbose)  {
 
-        auto terminate = [&](const State& x)
-        {
-            auto dx = x[0] - goal_[0];
-            auto dy = x[1] - goal_[1];
-            auto dist = sqrt(dx * dx + dy * dy);
-            return dist < goal_radius_;
-        };
-
-        Traj result;
-        State current = x_;
-        result.emplace_back(current);
+        std::vector<Traj> result(2);
 
         // Excute planner and Record end time
         auto start_time = std::chrono::high_resolution_clock::now();
-        bool solution_found = true;
+
         double elapsed_time;
+        bool solution_found = false;
 
         do{
-            BOPlanner mpc(current, goal_, cc_->getSharedPtr(), pm_->getSharedPtr());
-            Control act;
-            auto traj = mpc.computeControl(act);
+            BOPlanner mpc(x_, cc_->getSharedPtr(), pm_->getSharedPtr());
 
-            // update current state using state transition function
-            if(!traj.empty())
-            {
-//                 instead of one step, we can use preferred speed
-                int N = std::min((int) traj.size() - 1, pref_speed_index_);
-                current = motion(current, act, dt_);
-                current = traj[N];
-                std::copy(traj.begin() + 1, traj.begin() + N, std::back_inserter(result));
+            auto v = mpc.computeControl();
+            auto traj1 = calcTrajectory(x_[0], v(0), v(1),  goal_[0]);
+            auto traj2 = calcTrajectory(x_[1], v(2), v(3),  goal_[1]);
+            std::vector<Traj> currentTrajs{traj1, traj2};
 
-//                std::copy(traj.begin() + 1, traj.end(), std::back_inserter(result));
-//                current = traj.back();
+            bool goalReach[2] = {false, false};
+            for (int i = 0; i < currentTrajs.size(); ++i) {
+                if(!currentTrajs[i].empty())
+                { // check if we reached the goal
+                    double dist = std::hypot(x_[i][0] - goal_[i][0], x_[i][1] - goal_[i][1]);
+                    goalReach[i] = dist < goal_radius_;
+                    if(!goalReach[i])
+                    {
+                        // instead of one step, we can use preferred speed
+                        int N = std::min((int) currentTrajs[i].size() - 1, pref_speed_index_);
+                        x_[i] = currentTrajs[i][N];
+                        std::copy(currentTrajs[i].begin(), currentTrajs[i].begin() + N, std::back_inserter(result[i]));
+                        dist = std::hypot(x_[i][0] - goal_[i][0], x_[i][1] - goal_[i][1]);
+                        goalReach[i] = dist < goal_radius_;
+                    }
+                }
             }
+            // update current state using state transition function
+            solution_found = goalReach[0] && goalReach[1];
+
             auto end_time = std::chrono::high_resolution_clock::now();
             // Calculate duration
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
             // Output duration in microseconds
-            elapsed_time = (double) duration.count() / 1.0e6;
+            elapsed_time = (double) duration.count() / 1.0e3;
             if(elapsed_time > time)
             {
-                solution_found = false;
                 break;
             }
 
-        } while (!terminate(current));
+        } while (!solution_found);
 
         if(verbose)
         {

@@ -1,14 +1,19 @@
 //
-// Created by airlab on 12/25/24.
+// Created by redwan on 11/9/24.
 //
 
-#ifndef MBOW_COLLISIONCHECKER_H
-#define MBOW_COLLISIONCHECKER_H
-#include "MinkowskiSumComputer.h"
-#include "param_manager.h"
+#ifndef MCTS_BOW_COLLISIONCHECKER_H
+#define MCTS_BOW_COLLISIONCHECKER_H
+#include <vector>
+#include <array>
+#include <memory>
 #include <unordered_set>
+#include "param_manager.h"
+#include "CollisionCheckerBase.h"
+#include "MinkowskiSumComputer.h"
 
 namespace mbow{
+
     // Alias for the point type
     using POINT = std::pair<int, int>;
 
@@ -26,27 +31,23 @@ namespace mbow{
         }
     };
 
-    class CollisionChecker : public std::enable_shared_from_this<CollisionChecker> {
+    class CollisionChecker : public CollisionCheckerBase {
     public:
-        using CCPtr = std::shared_ptr<CollisionChecker>;
-
         CollisionChecker(const ParamPtr& pm);
 
         CCPtr getSharedPtr();
 
-        bool isCollision(const std::vector<std::array<double, 5>>& trajectory) const;
+        bool isCollision(const std::vector<std::array<double, 5>>& trajectory) const override;
+
+        void
+        initCollisionCheker(const std::vector<std::vector<float>> &obsList, float robotRadius, float obsLen) override;
 
     private:
-        float _robotRadius;
-        ParamPtr _pm;
         float _grid_step;
         std::unordered_set<POINT, PointHash, PointEqual> _obstacles_set;
         void addToObstaclesSet(const std::vector<float>& obsList, float robotRadius, float obsLen);
 
     };
-
-
-    using CCPtr = std::shared_ptr<CollisionChecker>;
 }
 
-#endif //MBOW_COLLISIONCHECKER_H
+#endif //MCTS_BOW_COLLISIONCHECKER_H

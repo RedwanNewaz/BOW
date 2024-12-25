@@ -10,6 +10,8 @@ find_package(Boost REQUIRED)
 find_package(YAML-CPP REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(NLopt REQUIRED)
+find_package(FCL REQUIRED)
+find_package(CCD REQUIRED)
 
 include_directories(
         include
@@ -18,14 +20,20 @@ include_directories(
 
 add_executable(MBOW main.cpp
         src/BOW.cpp
+        include/CollisionCheckerBase.h
         include/MinkowskiSumComputer.h
         include/CollisionChecker.h
         src/CollisionChecker.cpp
-        include/param_manager.h)
+        include/param_manager.h
+        src/FclCollisionChecker.cpp
+        include/limbo/FclCollisionChecker.h)
 target_precompile_headers(MBOW PUBLIC include/limbo/limbo/limbo.hpp)
+
 
 target_link_libraries(MBOW
         yaml-cpp::yaml-cpp
         Eigen3::Eigen
         -lnlopt_cxx
+        ${FCL_LIBRARIES}
+        ${CCD_LIBRARIES}
         Boost::boost)

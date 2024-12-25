@@ -124,7 +124,7 @@ namespace limbo {
                     if (is_nesterov) {
                         query_params.array() += gamma * v.array();
 
-                        // make sure that the parameters are still in bounds, if needed
+                        // make sure that the parameters are still in _bounds, if needed
                         if (bounded) {
                             for (int j = 0; j < query_params.size(); j++) {
                                 if (query_params(j) < 0)
